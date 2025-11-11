@@ -1,0 +1,65 @@
+#!/usr/bin/env fish
+# Juju Prompt Integration for Fish
+# Source this file in your ~/.config/fish/config.fish:
+#   source /snap/juju-prompt/current/shell/fish
+# Or if installed locally:
+#   source ~/.local/share/juju-prompt/shell/fish
+
+# Default: enabled
+set -gx JUJU_PS1_ENABLED on
+
+# Determine disable file location (same directory as colors.conf)
+if test -n "$SNAP_USER_COMMON"
+    set -gx JUJU_PS1_DISABLE_PATH "$SNAP_USER_COMMON/disabled"
+else
+    set -gx JUJU_PS1_DISABLE_PATH "$HOME/.config/juju-prompt/disabled"
+end
+
+# Check if globally disabled
+if test -f "$JUJU_PS1_DISABLE_PATH"
+    set -gx JUJU_PS1_ENABLED off
+end
+
+function juju_ps1
+    if test "$JUJU_PS1_ENABLED" = "off"
+        return
+    end
+
+    set -l juju_info (juju-prompt 2>/dev/null)
+    if test -n "$juju_info"
+        echo -n " ($juju_info)"
+    end
+end
+
+function juju-prompt-on
+    if test "$argv[1]" = "-h" -o "$argv[1]" = "--help"
+        echo "Enable juju-prompt for this shell session"
+        echo "Usage: juju-prompt-on [-g | --global]"
+        echo "  -g --global  enable globally (remove disable file)"
+        return
+    else if test "$argv[1]" = "-g" -o "$argv[1]" = "--global"
+        rm -f -- "$JUJU_PS1_DISABLE_PATH"
+        echo "Juju prompt enabled globally"
+    end
+
+    set -gx JUJU_PS1_ENABLED on
+end
+
+function juju-prompt-off
+    if test "$argv[1]" = "-h" -o "$argv[1]" = "--help"
+        echo "Disable juju-prompt for this shell session"
+        echo "Usage: juju-prompt-off [-g | --global]"
+        echo "  -g --global  disable globally (create disable file)"
+        return
+    else if test "$argv[1]" = "-g" -o "$argv[1]" = "--global"
+        mkdir -p -- (dirname "$JUJU_PS1_DISABLE_PATH")
+        touch -- "$JUJU_PS1_DISABLE_PATH"
+        echo "Juju prompt disabled globally"
+    end
+
+    set -gx JUJU_PS1_ENABLED off
+end
+
+# Note: To use juju_ps1 in Fish, you need to add it to your fish_prompt function.
+# You can customize your prompt by editing ~/.config/fish/functions/fish_prompt.fish
+# and adding (juju_ps1) where you want the Juju info to appear.

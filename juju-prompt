@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""
+juju-prompt - Display current Juju controller and model for shell prompts.
+
+This utility reads the Juju configuration files to determine the active
+controller and model, formatted for use in shell prompts.
+"""
+
+import os
+import re
+import sys
+from pathlib import Path
+
+
+def get_juju_data_dir():
+    """Get the Juju data directory path."""
+    juju_data = os.environ.get("JUJU_DATA")
+    if juju_data:
+        return Path(juju_data)
+
+    # When running in a snap, SNAP_REAL_HOME points to the actual home directory
+    # Otherwise, use the regular HOME
+    real_home = os.environ.get("SNAP_REAL_HOME")
+    if real_home:
+        return Path(real_home) / ".local" / "share" / "juju"
+
+    return Path.home() / ".local" / "share" / "juju"
+
+
+def get_color_code(color_name):
+    """Convert color name to ANSI color code."""
+    colors = {
+        "black": "\033[30m",
+        "red": "\033[31m",
+        "green": "\033[32m",
+        "yellow": "\033[33m",
+        "blue": "\033[34m",
+        "magenta": "\033[35m",
+        "cyan": "\033[36m",
+        "white": "\033[37m",
+        "bright_black": "\033[90m",
+        "bright_red": "\033[91m",
+        "bright_green": "\033[92m",
+        "bright_yellow": "\033[93m",
+        "bright_blue": "\033[94m",
+        "bright_magenta": "\033[95m",
+        "bright_cyan": "\033[96m",
+        "bright_white": "\033[97m",
+    }
+    return colors.get(color_name.lower(), "")
+
+
+def create_default_config(config_file):
+    """Create default color configuration file."""
+    default_config = """# Juju Prompt Color Configuration
+#
+# This file allows you to customize the colors of model names based on patterns.
+#
+# Format: pattern:color
+# - pattern: A regular expression to match against the model name
+# - color: Color name (see available colors below)
+#
+# Patterns are matched in order - the first match wins.
+# Use .* to match any characters, ^ for start, $ for end.
+
+# Available colors:
+# black, red, green, yellow, blue, magenta, cyan, white
+# bright_black, bright_red, bright_green, bright_yellow,
+# bright_blue, bright_magenta, bright_cyan, bright_white
+
+# Default patterns:
+^production.*:red
+.*critical.*:bright_red
+^staging.*:yellow
+^dev|test.*:green
+"""
+
+    try:
+        config_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(config_file, "w") as f:
+            f.write(default_config)
+    except Exception:
+        # Silently fail if we can't create the config
+        pass
+
+
+def load_color_config():
+    """
+    Load color configuration from config file.
+
+    Returns a list of (pattern, color) tuples for model name matching.
+    Config file location:
+      - When running from snap: ~/snap/juju-prompt/common/colors.conf
+      - When running locally: ~/.config/juju-prompt/colors.conf
+
+    Format:
+        # Lines starting with # are comments
+        pattern:color
+
+    Examples:
+        production.*:red
+        .*critical.*:bright_red
+        staging.*:yellow
+        dev.*:green
+    """
+    config_patterns = []
+
+    # Determine config file location
+    # If running in snap, use snap's common directory (writable and persistent)
+    snap_common = os.environ.get("SNAP_USER_COMMON")
+    if snap_common:
+        config_dir = Path(snap_common)
+    else:
+        # Not in snap - use standard config directory
+        config_dir = Path.home() / ".config" / "juju-prompt"
+
+    config_file = config_dir / "colors.conf"
+
+    # Create default config if it doesn't exist
+    if not config_file.exists():
+        create_default_config(config_file)
+
+    # Try to read the config file
+    if not config_file.exists():
+        return config_patterns
+
+    try:
+        with open(config_file, "r") as f:
+            for line in f:
+                line = line.strip()
+                # Skip empty lines and comments
+                if not line or line.startswith("#"):
+                    continue
+
+                # Parse pattern:color format
+                if ":" not in line:
+                    continue
+
+                parts = line.split(":", 1)
+                if len(parts) != 2:
+                    continue
+
+                pattern, color = parts[0].strip(), parts[1].strip()
+
+                # Validate pattern is a valid regex
+                try:
+                    re.compile(pattern)
+                    config_patterns.append((pattern, color))
+                except re.error:
+                    # Skip invalid patterns
+                    continue
+    except Exception as e:
+        # If we can't read the config, just return empty list
+        # In debug mode, we'd want to see this error
+        if os.environ.get("JUJU_PROMPT_DEBUG"):
+            print(f"DEBUG: Error reading config: {e}", file=sys.stderr)
+        pass
+
+    return config_patterns
+
+
+def get_model_color(model_name, config_patterns):
+    """
+    Get the color for a model based on configuration patterns.
+
+    Returns the color name if a pattern matches, otherwise None.
+    """
+    for pattern, color in config_patterns:
+        if re.match(pattern, model_name):
+            return color
+    return None
+
+
+def parse_current_controller(controllers_file):
+    """
+    Parse the current controller from controllers.yaml.
+
+    Uses simple line-by-line parsing to avoid yaml library dependency
+    and maximize speed.
+    """
+    try:
+        with open(controllers_file, "r") as f:
+            for line in f:
+                if line.startswith("current-controller:"):
+                    # Extract value after colon, strip whitespace and quotes
+                    return line.split(":", 1)[1].strip().strip("\"'")
+    except FileNotFoundError:
+        return None
+    except Exception:
+        return None
+    return None
+
+
+def parse_current_model(models_file, controller):
+    """
+    Parse the current model for a given controller from models.yaml.
+
+    Uses simple line-by-line parsing to avoid yaml library dependency
+    and maximize speed.
+    """
+    if not controller:
+        return None
+
+    try:
+        with open(models_file, "r") as f:
+            in_controller_section = False
+            indent_level = None
+
+            for line in f:
+                # Check if we're at the controller section
+                if line.strip().startswith(f"{controller}:"):
+                    in_controller_section = True
+                    # Calculate indent level of controller
+                    indent_level = len(line) - len(line.lstrip())
+                    continue
+
+                if in_controller_section:
+                    # If we hit another controller (same indent), we're done
+                    stripped = line.lstrip()
+                    if stripped and not line.startswith(" " * (indent_level + 1)):
+                        if ":" in stripped and indent_level is not None:
+                            current_indent = len(line) - len(stripped)
+                            if current_indent <= indent_level:
+                                break
+
+                    # Look for current-model line
+                    if "current-model:" in line:
+                        model = line.split(":", 1)[1].strip().strip("\"'")
+                        # Extract just the model name (after the slash if present)
+                        if "/" in model:
+                            return model.split("/")[-1]
+                        return model
+    except FileNotFoundError:
+        return None
+    except Exception:
+        return None
+    return None
+
+
+def main():
+    """Main entry point."""
+    # Debug output
+    debug = os.environ.get("JUJU_PROMPT_DEBUG", "").lower() in ("1", "true", "yes")
+
+    if debug:
+        print(f"DEBUG: HOME={Path.home()}", file=sys.stderr)
+        print(f"DEBUG: SNAP={os.environ.get('SNAP', 'not set')}", file=sys.stderr)
+        print(f"DEBUG: JUJU_DATA={os.environ.get('JUJU_DATA', 'not set')}", file=sys.stderr)
+
+    juju_data_dir = get_juju_data_dir()
+    controllers_file = juju_data_dir / "controllers.yaml"
+    models_file = juju_data_dir / "models.yaml"
+
+    if debug:
+        print(f"DEBUG: juju_data_dir={juju_data_dir}", file=sys.stderr)
+        print(f"DEBUG: controllers_file={controllers_file}", file=sys.stderr)
+        print(f"DEBUG: controllers_file.exists()={controllers_file.exists()}", file=sys.stderr)
+        if not controllers_file.exists():
+            print(f"DEBUG: parent exists={controllers_file.parent.exists()}", file=sys.stderr)
+            if controllers_file.parent.exists():
+                try:
+                    files = list(controllers_file.parent.iterdir())[:5]
+                    print(f"DEBUG: parent contents (first 5)={files}", file=sys.stderr)
+                except Exception as e:
+                    print(f"DEBUG: error listing parent: {e}", file=sys.stderr)
+
+    # Check if Juju is configured
+    if not controllers_file.exists():
+        if debug:
+            print("DEBUG: controllers file does not exist, exiting", file=sys.stderr)
+        sys.exit(0)
+
+    controller = parse_current_controller(controllers_file)
+    if debug:
+        print(f"DEBUG: controller={controller}", file=sys.stderr)
+
+    if not controller:
+        if debug:
+            print("DEBUG: no controller found, exiting", file=sys.stderr)
+        sys.exit(0)
+
+    model = parse_current_model(models_file, controller)
+    if debug:
+        print(f"DEBUG: model={model}", file=sys.stderr)
+
+    # ANSI color codes
+    RESET = "\033[0m"
+    controller_color = get_color_code("blue")
+
+    # Load color configuration for models
+    color_patterns = load_color_config()
+
+    if debug:
+        # Show config file location
+        real_home = os.environ.get("SNAP_REAL_HOME")
+        if real_home:
+            config_path = Path(real_home) / ".config" / "juju-prompt" / "colors.conf"
+        else:
+            config_path = Path.home() / ".config" / "juju-prompt" / "colors.conf"
+        print(f"DEBUG: config_path={config_path}", file=sys.stderr)
+        print(f"DEBUG: config_exists={config_path.exists()}", file=sys.stderr)
+        print(f"DEBUG: color_patterns={color_patterns}", file=sys.stderr)
+
+    # Format output with colored controller and optionally colored model
+    if model:
+        # Check if model matches any color pattern
+        model_color_name = get_model_color(model, color_patterns)
+        if debug:
+            print(f"DEBUG: model={model}", file=sys.stderr)
+            print(f"DEBUG: model_color_name={model_color_name}", file=sys.stderr)
+
+        if model_color_name:
+            model_color = get_color_code(model_color_name)
+            print(f"{controller_color}{controller}{RESET}:{model_color}{model}{RESET}")
+        else:
+            print(f"{controller_color}{controller}{RESET}:{model}")
+    else:
+        print(f"{controller_color}{controller}{RESET}")
+
+
+if __name__ == "__main__":
+    main()

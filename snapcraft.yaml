@@ -1,0 +1,69 @@
+name: juju-prompt
+base: core22
+version: git
+summary: Display active Juju controller and model in your shell prompt
+description: |
+  A lightweight utility that displays your current Juju controller and model,
+  designed for integration into shell prompts. It parses the Juju configuration
+  files to determine the active context.
+
+  Features:
+  - Fast execution with minimal dependencies
+  - Colored output with customizable model colors
+  - Pattern-based coloring for production/critical models
+  - Toggle commands (juju-prompt-on/off)
+  - Clean output format: controller:model
+  - Silent operation when Juju is not configured
+  - Shell integration for Bash, Zsh, and Fish
+
+  Usage:
+    juju-prompt           # Display current controller:model
+    juju-prompt.enable    # Show shell integration instructions
+    juju-prompt.disable   # Show how to disable
+
+  After installation, connect the Juju data interface:
+    sudo snap connect juju-prompt:dot-local-share-juju
+
+grade: stable
+confinement: strict
+
+apps:
+  juju-prompt:
+    command: bin/juju-prompt
+    plugs:
+      - dot-local-share-juju
+
+  enable:
+    command: bin/juju-prompt-enable
+    plugs:
+      - home
+
+  disable:
+    command: bin/juju-prompt-disable
+    plugs:
+      - home
+
+plugs:
+  dot-local-share-juju:
+    interface: personal-files
+    write:
+      - $HOME/.local/share/juju
+
+parts:
+  juju-prompt:
+    plugin: dump
+    source: .
+    organize:
+      juju-prompt: bin/juju-prompt
+      juju-prompt-enable: bin/juju-prompt-enable
+      juju-prompt-disable: bin/juju-prompt-disable
+      shell/bash: shell/bash
+      shell/zsh: shell/zsh
+      shell/fish: shell/fish
+      examples/colors.conf: examples/colors.conf
+    stage:
+      - bin/*
+      - shell/*
+      - examples/*
+    stage-packages:
+      - python3-minimal

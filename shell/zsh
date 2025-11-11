@@ -1,0 +1,57 @@
+#!/bin/zsh
+# Juju Prompt Integration for Zsh
+# Source this file in your ~/.zshrc:
+#   source /snap/juju-prompt/current/shell/zsh
+# Or if installed locally:
+#   source ~/.local/share/juju-prompt/shell/zsh
+
+# Default: enabled
+JUJU_PS1_ENABLED="${JUJU_PS1_ENABLED:-on}"
+
+# Determine disable file location (same directory as colors.conf)
+if [ -n "$SNAP_USER_COMMON" ]; then
+    JUJU_PS1_DISABLE_PATH="${SNAP_USER_COMMON}/disabled"
+else
+    JUJU_PS1_DISABLE_PATH="${HOME}/.config/juju-prompt/disabled"
+fi
+
+# Check if globally disabled
+[[ -f "${JUJU_PS1_DISABLE_PATH}" ]] && JUJU_PS1_ENABLED=off
+
+juju_ps1() {
+    [[ "${JUJU_PS1_ENABLED}" == "off" ]] && return
+
+    local juju_info=$(juju-prompt 2>/dev/null)
+    if [[ -n "$juju_info" ]]; then
+        echo " ($juju_info)"
+    fi
+}
+
+juju-prompt-on() {
+    if [[ "${1}" == '-h' || "${1}" == '--help' ]]; then
+        echo "Enable juju-prompt for this shell session"
+        echo "Usage: juju-prompt-on [-g | --global]"
+        echo "  -g --global  enable globally (remove disable file)"
+        return
+    elif [[ "${1}" == '-g' || "${1}" == '--global' ]]; then
+        rm -f -- "${JUJU_PS1_DISABLE_PATH}"
+        echo "Juju prompt enabled globally"
+    fi
+
+    JUJU_PS1_ENABLED=on
+}
+
+juju-prompt-off() {
+    if [[ "${1}" == '-h' || "${1}" == '--help' ]]; then
+        echo "Disable juju-prompt for this shell session"
+        echo "Usage: juju-prompt-off [-g | --global]"
+        echo "  -g --global  disable globally (create disable file)"
+        return
+    elif [[ "${1}" == '-g' || "${1}" == '--global' ]]; then
+        mkdir -p -- "$(dirname "${JUJU_PS1_DISABLE_PATH}")"
+        touch -- "${JUJU_PS1_DISABLE_PATH}"
+        echo "Juju prompt disabled globally"
+    fi
+
+    JUJU_PS1_ENABLED=off
+}
