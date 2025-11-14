@@ -1,4 +1,4 @@
-name: juju-prompt
+name: jps1
 base: core22
 version: git
 summary: Display active Juju controller and model in your shell prompt
@@ -17,18 +17,18 @@ description: |
   - Shell integration for Bash, Zsh, and Fish
 
   Usage:
-    juju-prompt           # Display current controller:model
-    juju-prompt.enable    # Show shell integration instructions
-    juju-prompt.disable   # Show how to disable
+    jps1                  # Display current controller:model
+    jps1.enable           # Show shell integration instructions
+    jps1.disable          # Show how to disable
 
   After installation, connect the Juju data interface:
-    sudo snap connect juju-prompt:dot-local-share-juju
+    sudo snap connect jps1:dot-local-share-juju
 
 grade: stable
 confinement: strict
 
 apps:
-  juju-prompt:
+  jps1:
     command: bin/juju-prompt
     plugs:
       - dot-local-share-juju

@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 # Juju Prompt Integration for Fish
 # Source this file in your ~/.config/fish/config.fish:
-#   source /snap/juju-prompt/current/shell/fish
+#   source /snap/jps1/current/shell/fish
 # Or if installed locally:
 #   source ~/.local/share/juju-prompt/shell/fish
 

@@ -33,7 +33,7 @@ detect_shell() {
 get_shell_dir() {
     if [ -n "$SNAP" ]; then
         # Use 'current' symlink instead of versioned path so it survives updates
-        echo "/snap/juju-prompt/current/shell"
+        echo "/snap/jps1/current/shell"
     else
         # Running from local installation
         echo "$(dirname "$(readlink -f "$0")")/shell"
@@ -115,7 +115,7 @@ main() {
     echo -e "${BLUE}Customization:${NC}"
     if [ -n "$SNAP" ]; then
         echo -e "  Model colors can be customized by editing:"
-        echo -e "  ${YELLOW}~/snap/juju-prompt/common/colors.conf${NC}"
+        echo -e "  ${YELLOW}~/snap/jps1/common/colors.conf${NC}"
         echo ""
         echo -e "  This file is auto-created on first run with default patterns."
         echo -e "  Example config also available at:"

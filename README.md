@@ -26,18 +26,18 @@ The easiest way to install juju-prompt is via snap:
 
 ```bash
 # Install from the snap store (when published)
-sudo snap install juju-prompt
+sudo snap install jps1
 
 # Connect the interface to access Juju data
-sudo snap connect juju-prompt:dot-local-share-juju
+sudo snap connect jps1:dot-local-share-juju
 
 # Enable shell integration
-juju-prompt.enable
+jps1.enable
 ```
 
 To disable:
 ```bash
-juju-prompt.disable
+jps1.disable
 ```
 
 ### Option 2: Manual Installation
@@ -76,8 +76,8 @@ just install-snap
 
 # Or build manually
 just snap
-sudo snap install --dangerous juju-prompt_*.snap
-sudo snap connect juju-prompt:dot-local-share-juju
+sudo snap install --dangerous jps1_*.snap
+sudo snap connect jps1:dot-local-share-juju
 ```
 
 ## Usage
@@ -103,10 +103,10 @@ If you installed via snap, the easiest way to enable shell integration is:
 
 ```bash
 # Enable for your current shell (auto-detected)
-juju-prompt.enable
+jps1.enable
 
 # Disable if needed
-juju-prompt.disable
+jps1.disable
 ```
 
 The enable command will:
@@ -175,7 +175,7 @@ juju-prompt supports customizable colors based on model name patterns. This is u
 
 ### Configuration File
 
-- **Snap installation**: `~/snap/juju-prompt/common/colors.conf`
+- **Snap installation**: `~/snap/jps1/common/colors.conf`
 - **Local installation**: `~/.config/juju-prompt/colors.conf`
 
 The configuration file is auto-created on first run with sensible defaults.
@@ -252,7 +252,7 @@ It uses simple line-by-line parsing for maximum performance, avoiding dependenci
 When installed as a snap, juju-prompt uses the `personal-files` interface to access `~/.local/share/juju` (the same approach used by the Juju snap itself). This requires manual connection after installation:
 
 ```bash
-sudo snap connect juju-prompt:dot-local-share-juju
+sudo snap connect jps1:dot-local-share-juju
 ```
 
 This is a security feature of snap confinement - applications must explicitly request access to user data outside their sandbox.

@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Juju Prompt Integration for Zsh
 # Source this file in your ~/.zshrc:
-#   source /snap/juju-prompt/current/shell/zsh
+#   source /snap/jps1/current/shell/zsh
 # Or if installed locally:
 #   source ~/.local/share/juju-prompt/shell/zsh
 

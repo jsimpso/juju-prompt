@@ -60,18 +60,18 @@ test:
 # Install the locally built snap
 install-snap: snap
     @echo "Installing snap..."
-    sudo snap install --dangerous juju-prompt_*.snap
+    sudo snap install --dangerous jps1_*.snap
     @echo ""
     @echo "Connect the Juju data interface:"
-    @echo "  sudo snap connect juju-prompt:dot-local-share-juju"
+    @echo "  sudo snap connect jps1:dot-local-share-juju"
     @echo ""
     @echo "Enable shell integration:"
-    @echo "  juju-prompt.enable"
+    @echo "  jps1.enable"
 
 # Uninstall the snap package
 uninstall-snap:
-    @echo "Removing juju-prompt snap..."
-    sudo snap remove juju-prompt
+    @echo "Removing jps1 snap..."
+    sudo snap remove jps1
     @echo "✓ Uninstalled snap"
 
 # Format Python files (requires black)

@@ -1,4 +1,4 @@
-# AI Agent Instructions for juju-prompt
+# AI Agent Instructions for jps1
 
 ## Core Philosophy
 
@@ -121,7 +121,7 @@ When something isn't working:
 For snap issues specifically:
 ```bash
 # Check if interface is connected
-snap connections juju-prompt
+snap connections jps1
 
 # Verify file access
 sudo ls -la ~/.local/share/juju/
