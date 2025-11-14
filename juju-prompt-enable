@@ -89,21 +89,10 @@ main() {
             ;;
     esac
 
-    echo -e "${GREEN}Step 1: Source the juju-prompt integration${NC}"
-    echo -e "Add this line to your $CONFIG_FILE:"
+    echo -e "${GREEN} Configure your shell (hint: ${CONFIG_FILE})${NC}"
     echo ""
     echo -e "  ${YELLOW}$SOURCE_LINE${NC}"
-    echo ""
-    echo -e "${GREEN}Step 2: Add juju_ps1 to your prompt${NC}"
-    if [[ "$SHELL_TYPE" == "fish" ]]; then
-        echo -e "${YELLOW}$PROMPT_EXAMPLE${NC}"
-    else
-        echo -e "Add \$(juju_ps1) to your existing PS1/PROMPT. For example:"
-        echo ""
-        echo -e "  ${YELLOW}$PROMPT_EXAMPLE${NC}"
-    fi
-    echo ""
-    echo -e "${GREEN}Step 3: Reload your shell${NC}"
+    echo -e "  ${YELLOW}$PROMPT_EXAMPLE${NC}"
     echo -e "  ${YELLOW}$RELOAD_CMD${NC}"
     echo ""
     echo -e "${BLUE}Toggle commands (available after sourcing):${NC}"
