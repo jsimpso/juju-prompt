@@ -46,7 +46,7 @@ apps:
 plugs:
   dot-local-share-juju:
     interface: personal-files
-    write:
+    read:
       - $HOME/.local/share/juju
 
 parts:
