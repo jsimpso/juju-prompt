@@ -93,6 +93,8 @@ main() {
     echo ""
     echo -e "  ${YELLOW}$SOURCE_LINE${NC}"
     echo -e "  ${YELLOW}$PROMPT_EXAMPLE${NC}"
+    echo ""
+    echo -e "${GREEN} Then reload your shell:${NC}"
     echo -e "  ${YELLOW}$RELOAD_CMD${NC}"
     echo ""
     echo -e "${BLUE}Toggle commands (available after sourcing):${NC}"
