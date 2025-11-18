@@ -25,7 +25,7 @@ function juju_ps1
         return
     end
 
-    set -l juju_info (juju-prompt 2>/dev/null)
+    set -l juju_info (jps1 2>/dev/null)
     if test -n "$juju_info"
         echo -n " ($juju_info)"
     end

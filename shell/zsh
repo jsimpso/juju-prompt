@@ -21,7 +21,7 @@ fi
 juju_ps1() {
     [[ "${JUJU_PS1_ENABLED}" == "off" ]] && return
 
-    local juju_info=$(juju-prompt 2>/dev/null)
+    local juju_info=$(jps1 2>/dev/null)
     if [[ -n "$juju_info" ]]; then
         echo " ($juju_info)"
     fi
